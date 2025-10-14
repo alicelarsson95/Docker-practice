@@ -1,0 +1,54 @@
+name: Build and Deploy React app
+
+on:
+  push:
+    branches: [ main ]  # kör varje gång du pushar till main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Klona din kod
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2️⃣ Installera nyaste Node LTS (22)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      # 3️⃣ Installera dependencies & bygg React
+      - name: Build project
+        run: |
+          cd client
+          npm ci
+          npm run build
+
+      # 4️⃣ Ladda upp byggmappen som en artefakt
+      - name: Upload build output
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: client/build
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      # 5️⃣ Deploya till GitHub Pages (moderna sättet)
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
