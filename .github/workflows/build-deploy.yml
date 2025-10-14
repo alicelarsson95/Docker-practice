@@ -2,7 +2,7 @@ name: Build and Deploy React app
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]  # Körs varje gång du pushar till main
 
 permissions:
   contents: read
@@ -17,21 +17,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 1️⃣ Klona koden
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2️⃣ Installera nyaste Node LTS (v22) + cachea dependencies från client/
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
+          cache-dependency-path: client/package-lock.json
 
+      # 3️⃣ Installera dependencies och bygg React-projektet
       - name: Build project
         working-directory: ./client
         run: |
           npm ci
           npm run build
 
+      # 4️⃣ Ladda upp build-mappen (så att nästa jobb kan deploya den)
       - name: Upload build output
         uses: actions/upload-pages-artifact@v3
         with:
@@ -44,6 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      # 5️⃣ Deploya till GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
